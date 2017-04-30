@@ -1,0 +1,11 @@
+; DO NOT EDIT (unless you know what you are doing)
+;
+; This subdirectory is a git "subrepo", and this file is maintained by the
+; git-subrepo command. See https://github.com/git-commands/git-subrepo#readme
+;
+[subrepo]
+	remote = https://github.com/vsergeev/c-periphery.git
+	branch = master
+	commit = e0871c09fc8465e99704e07765d587f66c683feb
+	parent = a0bdb0ed195c4e05cca23bacb3e9aed05bf35ee3
+	cmdver = 0.3.0
