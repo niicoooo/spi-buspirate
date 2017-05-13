@@ -1,3 +1,5 @@
+[![Travis](https://travis-ci.org/niicoooo/spi-buspirate.svg?branch=master)]()
+
 # spi-buspirate
 
 Linux kernel module for Bus Pirate / BusPirate as a SPI bus adapter
