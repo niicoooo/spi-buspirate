@@ -24,6 +24,7 @@
 #define DEBUG 1
 
 
+#include <linux/mutex.h>
 #include <linux/ctype.h>
 #include <linux/delay.h>
 #include <linux/gpio.h>
@@ -39,6 +40,8 @@
 #include <linux/workqueue.h>
 #include <linux/kobject.h>
 #include <linux/list.h>
+#include <linux/version.h>
+#include <generated/utsrelease.h>
 
 
 
@@ -141,8 +144,8 @@ static void rx_timeout_callback(unsigned long data) {
 
 static int bp_io_tx(struct bp *bp, char *tx_buf, int tx_len) /* Send data over serial line */
 {
-    BUG_ON(!mutex_is_locked(&bp->busy));
     int rc, i;
+    BUG_ON(!mutex_is_locked(&bp->busy));
 
     if (atomic_read(&bp->status) > BPSPI_STATE_OK) {
         pr_debug("(%s) TX cancelled!\n", bp->tty->name);
@@ -168,8 +171,8 @@ static int bp_io_tx(struct bp *bp, char *tx_buf, int tx_len) /* Send data over s
 
 static int bp_io_tx_char(struct bp *bp, char c) /* Send data over serial line */
 {
-    BUG_ON(!mutex_is_locked(&bp->busy));
     char buffer[1];
+    BUG_ON(!mutex_is_locked(&bp->busy));
 
     buffer[0] = c;
     return bp_io_tx(bp, buffer, 1);
@@ -400,10 +403,6 @@ static int bp_gpio_direction_input(struct gpio_chip *gc, unsigned offset)
     pr_debug("(%s) gpio_direction_input (offset:%d)\n", bp->tty->name, offset);
     return -EPERM;
 }
-
-static int bp_gpio_set_single_ended (struct gpio_chip *gc, unsigned offset, enum single_ended_mode mode) {
-    return -ENOTSUPP;
-}
 #endif
 
 
@@ -592,7 +591,11 @@ static void __bp_dev_remove(struct bp *bp) /* Remove spi_master, spi_device, gpi
     spi_unregister_master(bp->spi_master);
 #endif
 #ifdef ENABLEGPIO
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(3,17,8)
+    WARN_ON(gpiochip_remove(&bp->gpio_chip));
+#else
     gpiochip_remove(&bp->gpio_chip);
+#endif
 #endif
 };
 
@@ -611,7 +614,6 @@ static int __bp_dev_add(struct bp *bp) /* Create spi_master, spi_device, gpio_ch
     bp->gpio_chip.get_direction = bp_gpio_get_direction;
     bp->gpio_chip.direction_input = bp_gpio_direction_input;
     bp->gpio_chip.direction_output = bp_gpio_direction_output;
-    bp->gpio_chip.set_single_ended = bp_gpio_set_single_ended;
     bp->gpio_chip.get = bp_gpio_get_value;
     bp->gpio_chip.set = bp_gpio_set_value;
     bp->gpio_chip.can_sleep = true;
@@ -697,7 +699,11 @@ remove_spi:
 #endif
 remove_gpio:
 #ifdef ENABLEGPIO
+#if LINUX_VERSION_CODE <= KERNEL_VERSION(3,17,8)
+    WARN_ON(gpiochip_remove(&bp->gpio_chip));
+#else
     gpiochip_remove(&bp->gpio_chip);
+#endif
 #endif
     return -1;
 }
